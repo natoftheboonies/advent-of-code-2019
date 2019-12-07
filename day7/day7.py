@@ -13,87 +13,28 @@ with open('input', 'r') as infile:
 	program = list(map(int,input))
 	#print ("program length", len(program))
 
-
-def runprog(memory, input, cur=0):
-	#memory = program.copy()
-	incur = 0
-	#cur = 0
-	while True:
-	#for _ in range(10):
-		op = memory[cur]
-		# parse op to op, modes
-		opp = [op%100, op//100]
-		inst = []
-		if opp[0] == 99:
-			return (-1,cur) # signal, cursor
-		elif opp[0] == 3 or opp[0] == 4:
-			inst = memory[cur:cur+2]
-			cur += 2
-			if opp[0] == 3:
-				memory[inst[1]] = input[incur]
-				incur+=1
-			elif opp[0] == 4:
-				a = memory[inst[1]] if opp[1]%10==0 else inst[1]
-				#print("beep", a, cur)
-				return (a, cur) # signal, cursor
-		elif opp[0] == 5 or opp[0] == 6:
-			inst = memory[cur:cur+3]
-			cur += 3
-			a = memory[inst[1]] if opp[1]%10==0 else inst[1]
-			b = memory[inst[2]] if opp[1]//10==0 else inst[2]
-			#print('jump inst', inst,'opp', opp, 'a, b', a, b)
-			if (opp[0] == 5 and a != 0) or (opp[0] == 6 and a == 0):
-				cur = b
-				#print('jump to',cur)
-		else:
-			inst = memory[cur:cur+4]
-			cur += 4			
-			a = memory[inst[1]] if opp[1]%10==0 else inst[1]
-			b = memory[inst[2]] if opp[1]//10==0 else inst[2]			
-			#print('inst', inst,'opp', opp, 'a, b', a, b)
-			update = inst[3]
-			if opp[0] == 1:
-				inst[3] = a+b
-			elif opp[0] == 2:
-				inst[3] = a*b
-			elif opp[0] == 7:
-				if a < b:
-					inst[3] = 1
-				else:
-					inst[3] = 0
-			elif opp[0] == 8:
-				if a == b:
-					inst[3] = 1
-				else:
-					inst[3] = 0 
-			else:
-				print(f'unexpected {inst[0]} at cur {cur}')
-			memory[update]=inst[3]
-
 class Amp:
-	def __init__(self,phase):
+	def __init__(self, phase):
 		self.memory = program.copy()
 		self.cur = 0
 		self.phase = phase
+		self.used_phase = False
 
 	def runprog(self, input):
-		
-		#cur = 0
 		while True:
-		#for _ in range(10):
 			op = self.memory[self.cur]
 			# parse op to op, modes
 			opp = [op%100, op//100]
 			inst = []
 			if opp[0] == 99:
-				return -1 # signal, cursor
+				return None 
 			elif opp[0] == 3 or opp[0] == 4:
 				inst = self.memory[self.cur:self.cur+2]
 				self.cur += 2
 				if opp[0] == 3:
-					if self.phase:
+					if not self.used_phase:
 						self.memory[inst[1]] = self.phase
-						self.phase = None
+						self.used_phase = True
 					else:
 						self.memory[inst[1]] = input
 				elif opp[0] == 4:
@@ -134,54 +75,37 @@ class Amp:
 					print(f'unexpected {inst[0]} at cur {self.cur}')
 				self.memory[update]=inst[3]	
 
-
-# input is [phase, signal]
-max = 0
-maxt = None
+best = 0
+best_t = None
 for t in permutations([0,1,2,3,4]):
 	signal = 0
-	for phase in t:
-		signal = runprog(program.copy(),[phase, signal],0)[0]
-	if signal > max:
-		max = signal
-		maxt = t
-		#print('#1',signal,'from',t)
+	amps = [Amp(phase) for phase in t]
+	for amp in amps:
+		signal = amp.runprog(signal)
+	if signal > best:
+		best = signal
+		best_t = t
 		
-print('#1',max,'from',maxt)
+print('#1',best,'from',best_t)
 
-
-maxoutsignal = 0
+best = 0
 best_t = None
 
 for t in permutations([5,6,7,8,9]):
 	end = False
-	signal = [0]*5
-	outsignal = signal[0]
+	signal = 0
 	amps = [Amp(phase) for phase in t]
-	#cur = [0]*5
 	sanity = 0
-	while not end and sanity < 100:
+	while True and sanity < 100:
 		sanity+=1
-		outsignal = signal[0]
-		for prog in range(5):
-			p_next = (prog+1)%5
-			#print('runprog:',prog,signal[prog])
-			
-			signal[p_next] = amps[prog].runprog(signal[prog])
-			#print('cursors',cur)
-			#print('signals',signal)
-			if signal[p_next] == -1:
-				end = True
-	if outsignal > maxoutsignal:
-		maxoutsignal = outsignal
+		for amp in amps:
+			next_signal = amp.runprog(signal)
+			if next_signal == None:
+				break
+			signal=next_signal
+	if signal > best:
+		best = signal
 		best_t = t
 
 #print('sanity',sanity)
-print('#2', maxoutsignal,'from', best_t)
-
-
-
-
-
-
-
+print('#2', best,'from', best_t)
