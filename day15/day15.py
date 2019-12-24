@@ -176,6 +176,7 @@ for c in range(500):
 		if x == 2:
 			valid.append(i)
 			print('win!', c)
+			# wrong: 411, right: 412
 			sys.exit()
 		#print(i,x)
 	if len(valid)>1:
