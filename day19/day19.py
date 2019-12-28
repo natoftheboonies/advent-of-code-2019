@@ -131,19 +131,75 @@ class Amp:
 				else:
 					self.memory[update]=inst[3]	
 
+def checkinput(inst):
+	comp = Amp()
+	comp.setinputs(inst)
+	result = comp.runprog(-1)
+	return result	
 
+
+maze = defaultdict(int)
 count = 0 
 for y in range(50):
 	for x in range(50):
-		inst = [x,y]
-		comp = Amp()
-		comp.setinputs(inst)
-		count += comp.runprog(-1)
+		result = checkinput([x,y])
+		count += result
+		maze[x,y]=result
 
 print('#1',count)
 #1 141
 #[Finished in 2.8s]
 
+# for y in range(130,131):
+# 	for x in range(150,200):
+# 		inst = [x,y]
+# 		comp = Amp()
+# 		comp.setinputs(inst)
+# 		result = comp.runprog(-1)
+# 		count += result
+# 		maze[x,y]=result
+# 		print(maze[x,y],end='')
+# 	print()		
 
+#beam going \ so check / corners
 
+# for y in range(130,160):
+# 	for x in range(150,200):
+# 		if maze[x,y]==1 and maze[x-10,y+1] == 1 and maze[x-10,y+10]==1:
+# 			candidate = (x-9,y)
+# 			passed = True
+# 			for sy in range(10):
+# 				for sx in range(10):
+# 					if maze[candidate[0]+sx,candidate[1]+sy] != 1:
+# 						passed = False
+# 			if passed:
+# 				print("#2",candidate[0]*10000+candidate[1])
+# 			#break
+
+#1590137 too low
+#1600138 too low
+#1650142 too low
+
+# oh, 100x100 not 10x10 :-P
+
+# let's explore down the left side of the beam
+
+# start at 1000,1000
+x = y = 1000
+found = False
+while not found:
+	if checkinput([x,y])==1:
+		# then we are on bottom-left edge, so check top-right
+		if checkinput([x+99,y-99])==1:
+			found = True
+		else:
+			y+=1
+	else:
+		x+=1 
+print(f'found bottom left at x={x}, y={y}')
+
+print('#2',x*10000+(y-99))
+#15891369 is wrong
+#2 15641348
+#[Finished in 3.6s]
 
