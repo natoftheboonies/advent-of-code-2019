@@ -10,20 +10,6 @@ with open('input', 'r') as infile:
 	#print ("program length", len(program))
 
 
-def ascii(a):
-	if a == 10:
-		return '\n'
-	elif a == 35:
-		return '#'
-	elif a == 46:
-		return '.'
-	elif a == 94:
-		return '^'
-	else:
-		#print ('unknown ascii',a,chr(a))
-		return chr(a)
-	return None
-
 class Amp:
 	def __init__(self, phase=0):
 		self.memory = defaultdict(int)
@@ -89,10 +75,10 @@ class Amp:
 					a = self.parm(inst[1],opp[1]%10) #self.memory[inst[1]] if opp[1]%10==0 else inst[1]
 					#print("beep", a, self.cur)
 					if a > 10000:
-						print('#1',a)
+						#print('#1',a)
 						return a
 					else:
-						print(ascii(a),end='')
+						print(chr(a),end='')
 				elif opp[0] == 9:
 					a = self.parm(inst[1],opp[1]%10) #self.memory[inst[1]] if opp[1]%10==0 else inst[1]
 					self.base += a
@@ -154,6 +140,42 @@ while True:
 	a = comp.runprog(0)
 	if a == None:
 		break
+	elif a > 10000:
+		print ("#1",a)	
 
 
+# _ABCDEFGHI
+# 0123456789
+# jump goes 3, so from _ to D.  
+# But, can't land on a D when H is a hole.
+# So don't jump if C is a hole unless H is solid.
+'''
+jump when:
+- not A and D
+- not B and D
+- not C and H and D
+(!A or !B or (!C and H)) and D
+
+not C and H first, cuz OR'd with other jump conditions
+AND D last cuz AND'd with rest
+'''
+
+inst = '''NOT C J
+AND H J
+NOT A T
+OR T J
+NOT B T
+OR T J
+AND D J
+RUN
+'''
+
+comp = Amp()
+comp.setinputs([ord(x) for x in inst])
+while True:
+	a = comp.runprog(0)
+	if a == None:
+		break
+	elif a > 10000:
+		print ("#2",a)	
 
