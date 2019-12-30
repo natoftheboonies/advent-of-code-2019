@@ -166,26 +166,47 @@ for addr in range(50):
 		messages[addr] = []
 
 sanity = 0
+
+first_nat = None
+nat = None
+prior_nat = None
+
 while True and sanity < 10000:
 	sanity += 1
+	network_idle = True
 	for addr in range(50):
 		a = computers[addr]
 		if messages[addr]:
 			tellit = messages[addr].pop(0)
 			#print('message for',addr, tellit)
 			a.setinputs(tellit)
+			network_idle = False
 		else:
 			a.setinputs([-1])
 			#print('no message for ',addr)
 		
 		message = a.runprog()
 		while message:
+			network_idle = False
+			#print('message from',addr,'to',message[0],':',message[1:])
 			if message[0]==255:
-				print ('#1',message[2])
-				sanity = 100001
+				nat = message[1:]
+				if not first_nat:
+					first_nat = nat[:]
+					print ('#1',nat[1])
 				break
 			else:
 				messages[message[0]].append(message[1:])
 				message = a.runprog()
+	
+	if network_idle and nat:
+		if prior_nat and nat and prior_nat[1]==nat[1]:
+			print('#2',nat[1])
+			sanity = 100001
+			break
+		#print('wake up 0',nat, prior_nat)
+		messages[0].append(nat)
+		prior_nat = nat[:]
+		network_idle = False
 
 
