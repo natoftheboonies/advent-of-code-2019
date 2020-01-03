@@ -1,6 +1,6 @@
 from collections import defaultdict, deque
-import re
 from math import ceil
+
 formula = {}
 
 def parse_reactions(lines):
@@ -23,9 +23,9 @@ def parse_reactions(lines):
 	return reactions
 
 
-def calculate_fuel():
+def calculate_fuel(fuel):
 	#global formula
-	need = deque([(1,'FUEL')])
+	need = deque([(fuel,'FUEL')])
 	excess = defaultdict(int)
 
 	ore = 0
@@ -34,10 +34,10 @@ def calculate_fuel():
 		# turn a need into the parts and excesses
 		qty, what = need.popleft()
 		if what == 'ORE':
-			print(f'need {qty} {what}')
+			#print(f'need {qty} {what}')
 			ore += qty
 			continue
-		print('need',qty,what)
+		#print('need',qty,what)
 
 		# use up excess
 		if excess[what] >= qty:
@@ -51,20 +51,21 @@ def calculate_fuel():
 		formula_qty, stuff = formula[what] # FUEL = 1, [(7, 'B'), (1, 'E')]
 
 		mult = ceil(qty/formula_qty) # e.g., if need 14, recipe 10, then 2x
-		print('and thats',mult, 'times',stuff)
+		#print('and thats',mult, 'times',stuff)
 
 		for y in stuff:
 			amt = y[0]*mult 
 			chem = y[1]
-			print('add', amt, chem)
+			#print('add', amt, chem)
 			need.append((amt, chem))
 		
 		produced_qty = formula_qty * mult
 		excess[what] += (produced_qty - qty)
 
-		print('state',need)
-		print('excess',excess)
-	print('#1',ore)
+		#print('state',need)
+		#print('excess',excess)
+
+	return ore
 
 
 sample = '''10 ORE => 10 A
@@ -124,5 +125,28 @@ with open('input') as fp:
 
 formula = parse_reactions(sample.split('\n'))
 #print('rs',reactions)
-calculate_fuel()
+ore = calculate_fuel(1)
+print('#1',ore)
 #print(formula['FUEL'])
+
+goal = 1000000000000
+
+for x in range(15,25):
+	ore = calculate_fuel(2**x)
+#	print(x, 2**x,ore, ore>goal)
+
+low = 2**21
+high = 2**22
+
+while high-low>1:
+	x = (low+high)//2
+	if calculate_fuel(x)<goal:
+		low = x
+	else:
+		high = x
+
+#print('low',low)
+#print('high', high)
+
+print('#2', low)
+
