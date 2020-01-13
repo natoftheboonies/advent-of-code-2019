@@ -56,8 +56,10 @@ class Amp:
 				self.cur += 2
 				if opp[0] == 3:
 					if len(self.input)==0:
-						print('need a move')
-						self._input(0)
+						#print('need a move')
+						self.cur -=2
+						break
+						#self._input(0)
 					#if not self.used_phase:
 					if opp[1]%10==2:
 						self.memory[inst[1]+self.base]=self.input.pop(0)
@@ -113,6 +115,17 @@ class Amp:
 				else:
 					self.memory[update]=inst[3]	
 
+
+
+def printboard(game):
+	xm = max([x for (x,y) in game])
+	ym = max([y for (x,y) in game])
+	board = {0:' ',1:'=',2:'#',3:'-',4:'o'}	
+	for y in range(ym+1):
+		for x in range(xm+1):
+			print(board[game[(x,y)]],end='')
+		print()
+
 game = defaultdict(int)
 
 puter = Amp()
@@ -131,27 +144,56 @@ for i in range(1000000):
 	assert p in [0,1,2,3,4]
 	game[(x,y)]=p
 
-
 num_blocks = list(game.values()).count(2)
 print('#1',num_blocks)
 
+printboard(game)
+
 puter = Amp()
 puter.deposit_coin()
-puter._input(1)
-for i in range(1000000):
-	x = puter.runprog()
-	if x == None:
-		break
-	y = puter.runprog()
-	if y == None:
-		break
-	p = puter.runprog()
-	if p == None:
-		break
-	if x==-1 and y==0:
-		print('score',p)
-	else:
-		assert p in [0,1,2,3,4]
-		game[(x,y)]=p
+#puter._input(0)
+paddle = None
+ball = None
 
+sanity = 0
+score = 0
+while sanity < 10000:
+	sanity += 1
 
+	counter = 0
+	for i in range(1000000):
+		counter+=1
+		x = puter.runprog()
+		if x == None:
+			break
+		y = puter.runprog()
+		if y == None:
+			break
+		p = puter.runprog()
+		if p == None:
+			break
+		if x==-1 and y==0:
+			#print('score',p, counter)
+			counter = 0
+			score = p
+		else:
+			assert p in [0,1,2,3,4]
+			#print('...',x,y,p)
+			game[(x,y)]=p
+			if p == 3:
+				paddle = x
+			elif p == 4:
+				ball = x
+
+	#print('paddle',paddle)
+	#print('ball',ball)
+	move = 0
+	if paddle > ball:
+		move = -1
+	elif paddle < ball:
+		move = 1
+
+	#print('move',move)
+	puter._input(move)
+
+print('#2',score)
