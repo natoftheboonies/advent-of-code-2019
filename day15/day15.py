@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, deque
 import sys
 
 program = []
@@ -120,7 +120,27 @@ game = defaultdict(int)
 # move (input): north (1), south (2), west (3), and east (4)
 # output: wall (0), moved (1), moved+goal (2)
 
-# first, try all 4 directions
+NORTH, SOUTH, EAST, WEST = 1,2,3,4
+
+def turnright(i):
+	if i == NORTH:
+		return EAST
+	elif i == SOUTH:
+		return WEST
+	elif i == EAST:
+		return SOUTH
+	elif i == WEST:
+		return NORTH	
+
+def turnleft(i):
+	if i == NORTH:
+		return WEST
+	elif i == SOUTH:
+		return EAST
+	elif i == EAST:
+		return NORTH
+	elif i == WEST:
+		return SOUTH	
 
 def moveback(i):
 	if i == 1:
@@ -132,79 +152,131 @@ def moveback(i):
 	elif i == 4:
 		return 3
 
+
+def trytomove(puter, move):
+	puter._input(move)
+	x = puter.runprog()
+	return x
+
+def movecoords(movedir):
+	if movedir == NORTH:
+		return (0,-1)
+	elif movedir == SOUTH:
+		return (0,1)
+	elif movedir == EAST:
+		return (1,0)
+	elif movedir == WEST:
+		return (-1,0)
+	else:
+		print('unexpected move',movedir)
+
 puter = Amp()
 
-path = []
-blacklist = defaultdict(list) # {62 : [0]}
-blacklist[62] = [0]
-blacklist[178] = [0]
-blacklist[220] = [0]
-blacklist[234] = [0]
-blacklist[246] = [0]
-blacklist[316] = [0]
+botdir = NORTH
+botpos = (0,0)
+
+#game[botpos] = 1 # starting position is not wall or goal
+game = set()
+game.add(botpos)
+goal = None
+
+for _ in range(10000):
+	botdir = turnright(botdir)
+	movepos = movecoords(botdir)
+	newpos = (botpos[0]+movepos[0],botpos[1]+movepos[1])
+	well = trytomove(puter,botdir)
+	if well == 0: # wall right
+		#game[newpos] = well
+		# right blocked, try straight
+		botdir = turnleft(botdir)
+		movepos = movecoords(botdir)
+		newpos = (botpos[0]+movepos[0],botpos[1]+movepos[1])
+		well = trytomove(puter,botdir)
+		if well == 0: # wall straight
+			#game[newpos] = well	
+			# straight blocked, try left
+			botdir = turnleft(botdir)
+			movepos = movecoords(botdir)
+			newpos = (botpos[0]+movepos[0],botpos[1]+movepos[1])
+			well = trytomove(puter,botdir)
+			if well == 0: # wall left
+				pass
+				#print('we stuck')
+				#game[newpos] = well
+				# but now botdir is left, so we can just loop				
+			else: # left not a wall
+				botpos = newpos
+				game.add(botpos)
+				if well == 2:
+					#print('found air!')
+					goal = botpos
+
+		else: # straight not a wall
+			botpos = newpos
+			game.add(botpos)
+			if well == 2:
+				#print('found air!')
+				goal = botpos
+	else: # right not a wall
+		botpos = newpos
+		game.add(botpos)
+		if well == 2:
+			#print('found air!', botpos)
+			goal = botpos
+
+	if botpos==(0,0) and botdir == 1:
+		#print('we home', t)
+		break
+
+#print('air at', goal)
 
 
-for c in range(500):
-	currentchoices = []
-	choice = 0
-	#print(path)
-	last = None
-	step = 0
-	for i in path:
-		#print("i",i)
-		idx = 0
-		if step in blacklist.keys():
-			idx = max(blacklist[step])+1
-
-		last = moveback(i[idx])
-		puter._input(i[idx])
-		y = puter.runprog()
-		assert y == 1
-		step += 1
-	# look where to go next
+def find_neighbors(game, node): # node is (x,y)
 	valid = []
-	for i in range(1,5):
-		if i == last:
-			continue
-		puter._input(i)
-		x = puter.runprog()
-		if x == 1:
-			valid.append(i)
-			puter._input(moveback(i))
-			y = puter.runprog()
-			assert y == 1
-		if x == 2:
-			valid.append(i)
-			print('win!', c)
-			# wrong: 411, right: 412
-			sys.exit()
-		#print(i,x)
-	if len(valid)>1:
-		print("valid",valid, "at",c)
-	elif len(valid)==0:
-		print("stuck", c)
-		print(len(path),path)
-		sys.exit()
-
-	# return home
-	gohome = list(reversed(path))
-	#gohome.reverse()
-	#print("go home",gohome)
-	for i in gohome:
-		#print("i",i)
-		step -= 1			
-		idx = 0
-		if step in blacklist.keys():
-			idx = max(blacklist[step])+1
-		last = moveback(i[idx])
-		puter._input(last)
-		y = puter.runprog()
-		assert y == 1	
+	for move in (0,1),(0,-1),(1,0),(-1,0):
+		check = (node[0]+move[0],node[1]+move[1])
+		if check in game:
+			valid.append(check)
+	return valid
 
 
-	if len(valid)>=1:
-		path.append(valid)
+#ok, now we can BFS through game to find goal.
+
+def bfs_search(game, start, goal):
+	explored = set() # set needs flattened tuple
+	queue = deque([[start]]) #[[start]]
+	maxlen = 0
+	while queue:
+		path = queue.popleft()
+		#print(path)
+		node = path[-1]
+		if node not in explored:
+			neighbors = find_neighbors(game, node)
+			for neighbor in neighbors:
+				if neighbor in explored:
+					continue
+				new_path = list(path)
+				new_path.append(neighbor)
+				queue.append(new_path)
+				if len(new_path)>maxlen:
+					maxlen = len(new_path)
+				#print(new_path)
+				if neighbor == goal:
+					#print('goal!', new_path)
+					return new_path
+
+			explored.add(node)
+	return maxlen
+
+
+shortest_path = bfs_search(game,(0,0),goal)
+print("#1",len(shortest_path)-1)
+
+# hmm, to spread oxygen start at goal and find longest path
+longest_path = bfs_search(game,goal,None)
+print("#2",longest_path-1)
+
 
 #print("path",path)
-print("outta gas")
+#print("outta gas")
 
