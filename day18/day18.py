@@ -1,4 +1,5 @@
 from collections import defaultdict, deque
+from itertools import count
 
 sample = '''#########
 #b.A.@.a#
@@ -38,24 +39,41 @@ sample2 = '''#################
 #################
 '''
 
-maze = defaultdict(str)
+sample2_1 = '''###############
+#d.ABC.#.....a#
+######@#@######
+###############
+######@#@######
+#b.....#.....c#
+###############
+'''
+sample2_2 = '''#############
+#DcBa.#.GhKl#
+#.###@#@#I###
+#e#d#####j#k#
+###C#@#@###J#
+#fEbA.#.FgHi#
+#############
+'''
 
-lines = sample.split('\n')
+sample2_3 = '''#############
+#g#f.D#..h#l#
+#F###e#E###.#
+#dCba@#@BcIJ#
+#############
+#nK.L@#@G...#
+#M###N#H###.#
+#o#m..#i#jk.#
+#############
+'''
+
+lines = sample2_1.split('\n')
 with open('input') as fp:
-	#lines = fp.readlines()
+	lines = fp.readlines()
 	pass
 
-start = None
+maze = defaultdict(str)
 allkeys = set()
-for y, line in enumerate(lines):
-	for x, char in enumerate(line):
-		maze[x,y]=char
-		if char == '@':
-			start = (x,y)
-		elif char.islower():
-			allkeys.add(char)
-
-print(start, allkeys)
 
 
 def find_neighbors(node): # node is [(x,y),k] where k is keys
@@ -99,8 +117,47 @@ def bfs_search(start):
 			explored.add(flatten(node))
 	return None
 
-path = bfs_search([start,set()])
-#print(path)
-print('#1',len(path)-1)
-#1 4544
-#[Finished in 91.7s]
+
+def part1():
+
+	start = None
+
+	for y, line in enumerate(lines):
+		for x, char in enumerate(line):
+			maze[x,y]=char
+			if char == '@':
+				start = (x,y)
+			elif char.islower():
+				allkeys.add(char)
+
+	print(start, allkeys)
+
+	path = bfs_search([start,set()])
+	#print(path)
+	print('#1',len(path)-1)
+
+def split_maze():
+	# todo
+	pass
+
+def part2():
+	split_maze()
+	starts = None
+	for y, line in enumerate(lines):
+		for x, char in enumerate(line):
+			maze[x,y]=char
+			if char == '@':
+				print('start',(x,y))
+				start = (x,y)
+			elif char.islower():
+				allkeys.add(char)
+	blah = bfs_search([start,set()])
+	print(blah) # i give up
+
+
+if __name__ == '__main__':
+	part1()
+	#1 4544
+	#[Finished in 91.7s]
+	part2()
+
